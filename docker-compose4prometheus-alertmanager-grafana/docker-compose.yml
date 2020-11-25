@@ -1,0 +1,80 @@
+version: '3.3'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    network_mode: 'host'
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/rules:/etc/prometheus/rules
+    depends_on:
+      - cadvisor
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    network_mode: 'host'
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - '9100:9100'
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
+
+  cadvisor:
+    image: google/cadvisor:latest
+    network_mode: 'host'
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    network_mode: 'host'
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    user: '0'
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+
+  alert:
+    image: prom/alertmanager:latest
+    network_mode: 'host'
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+      - '9093:9093'
+    #command:
+      #- '--config.file="/etc/alertmanager/alertmanager.yml"'
+      #- '--storage.path="/alertmanager"'
+      #- '--web.listen-address="0.0.0.0:9093"'
+    volumes:
+      #- ./data/alertmanager/db/:/alertmanager
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./config/alertmanager/templates/:/etc/alertmanager/templates
+#
+# https://cloud.tencent.com/developer/article/1501425
+# https://www.cnblogs.com/zhaojiedi1992/p/zhaojiedi_liunx_65_prometheus_alertmanager_rule.html
+# 更多报警rules
+# https://awesome-prometheus-alerts.grep.to/rules
+# https://yunlzheng.gitbook.io/prometheus-book/parti-prometheus-ji-chu/alert/alert-template

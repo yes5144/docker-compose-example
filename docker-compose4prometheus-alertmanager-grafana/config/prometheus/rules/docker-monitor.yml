@@ -1,0 +1,10 @@
+groups:
+- name: "container monitor"
+  rules:
+  - alert: "Container down: node"
+    expr: time() - container_last_seen{name=~"node"} > 60
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container down: {{$labels.instance}} name={{$labels.name}}"

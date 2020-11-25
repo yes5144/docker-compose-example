@@ -1,0 +1,23 @@
+groups:
+- name: hostStatsAlert
+  rules:
+  - alert: hostCpuUsageAlert
+    #expr: sum(avg without (cpu)(irate(node_cpu{mode!='idle'}[5m]))) by (instance) > 0.85
+    expr: sum(avg without (cpu)(irate(node_cpu_seconds_total{mode!='idle'}[5m]))) by (instance) > 0.35
+    for: 1m
+    labels:
+      severity: test
+    annotations:
+      summary: "Instance {{ $labels.instance }} CPU usgae high"
+      description: "{{ $labels.instance }} CPU usage above 35% (current value: {{ $value }})"
+      value: "{{ humanize $value}}"
+  - alert: hostMemUsageAlert
+    #expr: (node_memory_MemTotal - node_memory_MemAvailable)/node_memory_MemTotal > 0.85
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes )/node_memory_MemTotal_bytes > 0.35
+    for: 1m
+    labels:
+      severity: test
+    annotations:
+      summary: "Instance {{ $labels.instance }} MEM usgae high"
+      description: "{{ $labels.instance }} MEM usage above 35% (current value: {{ $value }})"
+      value: "{{ humanize $value}}"

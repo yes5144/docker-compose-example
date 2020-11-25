@@ -1,0 +1,52 @@
+global:
+  resolve_timeout: 2m
+  smtp_smarthost: smtp.qq.com:465
+  smtp_from: 1006793841@qq.com
+  smtp_auth_username: 1006793841@qq.com
+  smtp_auth_password: '你的QQ授权码，不是密码'
+  smtp_require_tls: false
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+route:
+  receiver: 'dingtalk'
+  group_wait: 20s #组报警等待时间
+  group_interval: 10s  #组报警间隔时间
+  repeat_interval: 2m  #重复报警间隔时间
+  group_by: 
+  - alertname
+  routes:
+  - match_re:
+      #instance: localhost.*
+      severity: test
+    receiver: test
+    group_wait: 21s
+  - match_re:
+      instance: .*
+    receiver: dingtalk
+    group_wait: 10s
+    group_interval: 10s
+    repeat_interval: 1m
+    group_by:
+    - alertname
+receivers:
+  - name: 'default-receiver'
+    email_configs:
+    - to: 'xx@xx.xx'
+      html: '{{ template "xx.html" . }}'
+      headers: { Subject: " {{ .CommonAnnotations.summary }}" }
+  - name: 'test'
+    email_configs:
+    - to: '1006793841@qq.com'
+      send_resolved: true
+      html: '{{ template "test.tmpl" . }}'
+      headers: { Subject: " second route test" }    
+  - name: 'dingtalk'
+    webhook_configs:
+    - send_resolved: true
+      url: 'https://oapi.dingtalk.com/robot/send?access_token=2e75xxx'
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']
